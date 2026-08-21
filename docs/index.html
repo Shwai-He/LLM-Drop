@@ -3,24 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LLM-Drop: Uncovering Redundancy in Transformers</title>
-  <meta name="description" content="Project page for Uncovering the Redundancy in Transformers via a Unified Study of Layer Dropping.">
+  <title>LLM-Drop: Uncovering Redundancy in Transformers via a Unified Study of Layer Dropping</title>
+  <meta name="description" content="Official project page for LLM-Drop (TMLR 2026 / Qualcomm Innovation Fellowship Winner 2025): A unified study of architectural redundancy in Transformers via layer and block dropping.">
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
   <style>
     :root {
-      --ink: #202326;
-      --muted: #5b6268;
-      --paper: #f8fbfa;
-      --surface: #ffffff;
-      --line: #dbe3e0;
-      --green: #0d6b5d;
-      --green-dark: #173f39;
-      --red: #c84f49;
-      --yellow: #f0c64a;
-      --shadow: 0 16px 46px rgba(32, 35, 38, 0.12);
+      --primary: #0d9488;
+      --primary-dark: #0f766e;
+      --primary-light: #ccfbf1;
+      --accent: #f59e0b;
+      --accent-award: #fbbf24;
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --code-bg: #0f172a;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     }
 
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     html {
@@ -28,530 +41,1081 @@
     }
 
     body {
-      margin: 0;
-      color: var(--ink);
-      background: var(--paper);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 17px;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.65;
-      letter-spacing: 0;
+      font-size: 16px;
     }
 
-    a {
-      color: var(--green);
-      text-decoration-thickness: 1.5px;
-      text-underline-offset: 4px;
+    /* Container */
+    .container {
+      width: min(1140px, calc(100% - 3rem));
+      margin: 0 auto;
     }
 
-    img {
-      display: block;
-      max-width: 100%;
-      height: auto;
+    .container-narrow {
+      width: min(880px, calc(100% - 3rem));
+      margin: 0 auto;
     }
 
-    .nav {
+    /* Navbar */
+    .navbar {
       position: sticky;
       top: 0;
-      z-index: 10;
-      background: rgba(255, 255, 255, 0.94);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(14px);
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.2s ease;
     }
 
-    .nav-inner {
-      width: min(1120px, calc(100% - 36px));
-      min-height: 58px;
-      margin: 0 auto;
+    .nav-content {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
+      height: 64px;
     }
 
-    .brand {
-      color: var(--ink);
-      font-weight: 850;
+    .brand-logo {
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--primary-dark);
       text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-logo span {
+      background: linear-gradient(135deg, var(--primary) 0%, #0284c7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .nav-links {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 16px;
+      gap: 1.5rem;
+      align-items: center;
     }
 
     .nav-links a {
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 750;
+      color: var(--text-muted);
       text-decoration: none;
+      font-weight: 600;
+      font-size: 0.925rem;
+      transition: color 0.15s ease;
     }
 
-    .hero {
-      padding: 74px 22px 62px;
-      background: linear-gradient(130deg, #0d6b5d 0%, #173f39 52%, #202326 100%);
-      color: #ffffff;
+    .nav-links a:hover {
+      color: var(--primary);
     }
 
-    .hero-wrap {
-      width: min(1120px, 100%);
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(300px, 440px);
-      gap: 34px;
-      align-items: center;
-    }
-
-    .venue {
-      display: inline-flex;
-      padding: 6px 11px;
-      border: 1px solid rgba(255, 255, 255, 0.42);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.14);
-      font-size: 13px;
-      font-weight: 850;
-    }
-
-    h1 {
-      margin: 20px 0 0;
-      font-size: 50px;
-      line-height: 1.06;
-      letter-spacing: 0;
-    }
-
-    .positioning {
-      max-width: 760px;
-      margin: 24px 0 0;
-      color: rgba(255, 255, 255, 0.92);
-      font-size: 20px;
-    }
-
-    .authors,
-    .affiliations {
-      margin: 18px 0 0;
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 16px;
-    }
-
-    .authors a {
-      color: #ffffff;
-      font-weight: 750;
-    }
-
-    .hero-actions,
-    .resource-actions {
+    /* Award Banner */
+    .award-banner {
+      background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 50%, #fffbeb 100%);
+      border-bottom: 1px solid #fde68a;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.925rem;
+      color: #92400e;
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 28px;
-    }
-
-    .button {
-      display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 42px;
-      padding: 9px 15px;
-      border-radius: 8px;
-      border: 1px solid transparent;
-      background: #ffffff;
-      color: var(--ink);
-      font-weight: 850;
+      gap: 0.5rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      padding: 4.5rem 0 3.5rem;
+      background: radial-gradient(circle at 50% 0%, rgba(13, 148, 136, 0.08) 0%, transparent 70%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
       text-decoration: none;
+      transition: transform 0.15s ease;
     }
 
-    .button.secondary {
+    .badge:hover {
+      transform: translateY(-1px);
+    }
+
+    .badge-tmlr {
+      background: #0f766e;
       color: #ffffff;
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.42);
     }
 
-    .hero-figure {
-      width: min(100%, 440px);
-      justify-self: end;
-      margin: 0;
-      border: 1px solid rgba(255, 255, 255, 0.38);
-      border-radius: 8px;
-      overflow: hidden;
-      background: #ffffff;
-      box-shadow: var(--shadow);
+    .badge-qif {
+      background: #f59e0b;
+      color: #ffffff;
     }
 
-    .hero-figure img {
+    .hero-title {
+      font-size: clamp(2rem, 4.5vw, 3.25rem);
+      font-weight: 800;
+      line-height: 1.15;
+      text-align: center;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
+      max-width: 960px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto 2rem;
+      line-height: 1.6;
+    }
+
+    /* Authors */
+    .authors-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.25rem 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .author-item {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .author-item a {
+      color: var(--text-main);
+      text-decoration: none;
+      border-bottom: 1.5px dotted var(--primary);
+      transition: color 0.15s;
+    }
+
+    .author-item a:hover {
+      color: var(--primary);
+    }
+
+    .affiliations {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 2.25rem;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.875rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.35rem;
+      border-radius: 0.625rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 14px 0 rgba(13, 148, 136, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-outline:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+
+    .btn-hf {
+      background: #fef08a;
+      color: #713f12;
+      border: 1px solid #fde047;
+    }
+
+    .btn-hf:hover {
+      background: #fde047;
+      transform: translateY(-1px);
+    }
+
+    /* Teaser / Hero Visual */
+    .hero-teaser-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-xl);
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .hero-teaser-card img {
       width: 100%;
-      max-height: 280px;
-      object-fit: contain;
-      padding: 18px;
-      background: #ffffff;
-    }
-
-    .hero-figure figcaption {
-      padding: 13px 16px 15px;
-      background: #ffffff;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    section {
-      padding: 68px 22px;
-    }
-
-    .wrap {
-      width: min(1120px, 100%);
-      margin: 0 auto;
-    }
-
-    .narrow {
-      width: min(860px, 100%);
-      margin: 0 auto;
-    }
-
-    .eyebrow {
-      margin: 0 0 10px;
-      color: var(--red);
-      font-size: 13px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    h2 {
-      margin: 0 0 18px;
-      font-size: 40px;
-      line-height: 1.12;
-      letter-spacing: 0;
-    }
-
-    h3 {
-      margin: 0 0 10px;
-      font-size: 22px;
-      line-height: 1.2;
-      letter-spacing: 0;
-    }
-
-    .lead {
-      margin: 0;
-      color: var(--muted);
-      font-size: 20px;
-    }
-
-    .claim-grid,
-    .pipeline-grid,
-    .resource-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-      margin-top: 32px;
-    }
-
-    .claim,
-    .pipeline-step,
-    .resource {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--surface);
-      box-shadow: 0 10px 26px rgba(32, 35, 38, 0.06);
-    }
-
-    .claim,
-    .pipeline-step {
-      padding: 22px;
-    }
-
-    .claim strong,
-    .pipeline-step strong {
+      height: auto;
+      border-radius: 0.5rem;
       display: block;
-      margin-bottom: 8px;
-      color: var(--green);
-      font-size: 18px;
     }
 
-    .band {
-      background: #ffffff;
-      border-block: 1px solid var(--line);
+    .teaser-caption {
+      margin-top: 1rem;
+      font-size: 0.925rem;
+      color: var(--text-muted);
+      text-align: center;
     }
 
-    .pipeline-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* Section Styling */
+    section {
+      padding: 5rem 0;
+      border-bottom: 1px solid var(--border);
     }
 
-    .pipeline-step {
-      min-height: 190px;
-      border-top: 5px solid var(--green);
+    .section-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
     }
 
-    .news-list {
-      margin: 30px 0 0;
-      padding: 0;
-      list-style: none;
+    .section-eyebrow {
+      text-transform: uppercase;
+      font-size: 0.825rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 3vw, 2.35rem);
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0.75rem auto 0;
+    }
+
+    /* Stat Highlights Grid */
+    .stats-grid {
       display: grid;
-      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
     }
 
-    .news-list li {
-      padding: 16px 18px;
-      border-left: 5px solid var(--yellow);
-      border-radius: 8px;
-      background: #ffffff;
-      box-shadow: 0 10px 26px rgba(32, 35, 38, 0.06);
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.75rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .resource {
-      min-height: 172px;
-      padding: 22px;
-      color: var(--ink);
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-icon {
+      font-size: 2rem;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .stat-number {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+    }
+
+    .stat-subtext {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Method Taxonomy Cards */
+    .taxonomy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .taxonomy-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.75rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+
+    .taxonomy-card:hover {
+      border-color: #99f6e4;
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-tag {
+      display: inline-block;
+      align-self: flex-start;
+      padding: 0.25rem 0.65rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-blue { background: #dbeafe; color: #1e40af; }
+    .tag-purple { background: #f3e8ff; color: #6b21a8; }
+    .tag-amber { background: #fef3c7; color: #92400e; }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--text-main);
+    }
+
+    .card-text {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      line-height: 1.6;
+    }
+
+    .card-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.825rem;
+      font-weight: 600;
+    }
+
+    .pill {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 0.2rem 0.55rem;
+      border-radius: 0.375rem;
+    }
+
+    /* Benchmark Table */
+    .table-container {
+      overflow-x: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      box-shadow: var(--shadow-sm);
+      margin-top: 1.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background-color: #f8fafc;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: #f8fafc;
+    }
+
+    .highlight-cell {
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    /* Code Blocks */
+    .code-box {
+      position: relative;
+      background: var(--code-bg);
+      border-radius: 0.75rem;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      box-shadow: var(--shadow-md);
+      margin: 1.5rem 0;
+    }
+
+    .code-box pre {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.85rem;
+      right: 0.85rem;
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border: none;
+      border-radius: 0.375rem;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.775rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: background 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Checkpoints Grid */
+    .checkpoints-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .checkpoint-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 0.875rem;
+      padding: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cp-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+
+    .cp-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .cp-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .cp-link:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.75rem;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -2rem;
+      top: 5px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 3px solid #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .timeline-date {
+      font-weight: 800;
+      font-size: 0.875rem;
+      color: var(--primary-dark);
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-content {
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    /* Footer */
+    footer {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 3.5rem 0 2.5rem;
+      font-size: 0.925rem;
+    }
+
+    footer a {
+      color: #cbd5e1;
       text-decoration: none;
     }
 
-    .resource span {
-      display: block;
-      color: var(--red);
-      font-size: 13px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    .resource strong {
-      display: block;
-      margin-top: 8px;
-      color: var(--green);
-      font-size: 22px;
-      line-height: 1.2;
-    }
-
-    .resource p {
-      margin: 12px 0 0;
-      color: var(--muted);
-    }
-
-    .citation {
-      background: #26332f;
+    footer a:hover {
       color: #ffffff;
+      text-decoration: underline;
     }
 
-    .citation .lead,
-    .citation .eyebrow {
-      color: rgba(255, 255, 255, 0.78);
-    }
-
-    pre {
-      margin: 28px 0 0;
-      padding: 20px;
-      overflow-x: auto;
-      border-radius: 8px;
-      background: #101815;
-      color: #f7fbf8;
-      font-size: 14px;
-      line-height: 1.55;
-    }
-
-    footer {
-      padding: 28px 22px;
-      border-top: 1px solid var(--line);
-      background: #ffffff;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    footer .wrap {
+    .footer-content {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 18px;
+      gap: 2rem;
+      align-items: center;
     }
 
-    @media (max-width: 980px) {
-      .hero-wrap,
-      .claim-grid,
-      .pipeline-grid,
-      .resource-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-figure {
-        width: min(100%, 520px);
-        justify-self: start;
-      }
-
-      .nav-inner {
-        align-items: flex-start;
-        flex-direction: column;
-        padding: 12px 0;
-      }
-
-      .nav-links {
-        justify-content: flex-start;
-      }
-
-      h1 {
-        font-size: 36px;
-      }
-
-      h2 {
-        font-size: 30px;
-      }
-
-      .positioning,
-      .lead {
-        font-size: 18px;
-      }
-
-      section {
-        padding: 54px 18px;
-      }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hero-title { font-size: 1.85rem; }
+      .action-buttons { flex-direction: column; width: 100%; }
+      .btn { width: 100%; justify-content: center; }
     }
   </style>
 </head>
 <body>
-  <nav class="nav" aria-label="Primary">
-    <div class="nav-inner">
-      <a class="brand" href="#">LLM-Drop</a>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      <a href="#" class="brand-logo">
+        <i class="fa-solid fa-cube"></i>
+        <span>LLM-Drop</span>
+      </a>
       <div class="nav-links">
-        <a href="#motivation">Motivation</a>
-        <a href="#pipeline">Pipeline</a>
-        <a href="#resources">Resources</a>
-        <a href="#news">News</a>
+        <a href="#overview">Overview</a>
+        <a href="#taxonomy">Taxonomy</a>
+        <a href="#benchmarks">Benchmarks</a>
+        <a href="#checkpoints">Model Zoo</a>
+        <a href="#quickstart">Quickstart</a>
         <a href="#citation">Citation</a>
+        <a href="https://github.com/CASE-Lab-UMD/LLM-Drop" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.85rem; font-size: 0.85rem;">
+          <i class="fa-brands fa-github"></i> GitHub
+        </a>
       </div>
     </div>
   </nav>
 
+  <!-- Award Announcement Banner -->
+  <div class="award-banner">
+    <span>🏆 <b>Qualcomm Innovation Fellowship (QIF) North America 2025 Winner</b> — Efficiency-Optimized Transformer Architectures</span>
+  </div>
+
+  <!-- Hero Section -->
   <header class="hero">
-    <div class="hero-wrap">
-      <div>
-        <div class="venue">TMLR 2026</div>
-        <h1>Uncovering the Redundancy in Transformers via a Unified Study of Layer Dropping</h1>
-        <p class="positioning">A unified study of architectural redundancy in Transformer-based LLMs, with practical pipelines for block dropping, attention/MLP layer dropping, joint layer dropping, and post-training quantization.</p>
-        <p class="authors">
-          <a href="https://shwai-he.github.io/">Shwai He*</a>,
-          <a href="https://s1ghhh.github.io/">Guoheng Sun*</a>,
-          <a href="https://shenzheyu.github.io/">Zheyu Shen</a>,
-          <a href="https://www.ang-li.com/">Ang Li</a>
-        </p>
-        <p class="affiliations">University of Maryland, College Park</p>
-        <div class="hero-actions">
-          <a class="button" href="https://openreview.net/forum?id=1I7PCbOPfe">Paper</a>
-          <a class="button secondary" href="https://github.com/CASE-Lab-UMD/LLM-Drop">Code</a>
-          <a class="button secondary" href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a">Models</a>
-          <a class="button secondary" href="#citation">BibTeX</a>
-        </div>
+    <div class="container">
+      
+      <div class="hero-badges">
+        <span class="badge badge-tmlr"><i class="fa-solid fa-book-open"></i> TMLR 2026</span>
+        <span class="badge badge-qif"><i class="fa-solid fa-trophy"></i> QIF Fellowship Winner</span>
+        <span class="badge" style="background: #e0e7ff; color: #3730a3;"><i class="fa-solid fa-bolt"></i> Up to 2.1× Speedup</span>
       </div>
-      <figure class="hero-figure">
-        <img src="static/images/Layer_Drop.svg" alt="LLM-Drop layer dropping overview">
-        <figcaption>LLM-Drop studies Transformer redundancy through block drop, layer drop, joint layer drop, and quantization-aware evaluation.</figcaption>
-      </figure>
+
+      <h1 class="hero-title">Uncovering the Redundancy in Transformers via a Unified Study of Layer Dropping</h1>
+      
+      <p class="hero-subtitle">
+        A systematic study of asymmetric architectural redundancy in Large Language Models, providing unified pipelines for Block Dropping, Attention & MLP Layer Dropping, Joint Schedules, and Quantization.
+      </p>
+
+      <div class="authors-list">
+        <div class="author-item"><a href="https://shwai-he.github.io/" target="_blank">Shwai He*</a></div>
+        <div class="author-item"><a href="https://s1ghhh.github.io/" target="_blank">Guoheng Sun*</a></div>
+        <div class="author-item"><a href="https://shenzheyu.github.io/" target="_blank">Zheyu Shen</a></div>
+        <div class="author-item"><a href="https://www.ang-li.com/" target="_blank">Ang Li</a></div>
+      </div>
+      
+      <p class="affiliations">
+        <i class="fa-solid fa-building-columns"></i> CASE Lab, University of Maryland, College Park &nbsp;•&nbsp; <sub>* Equal contribution</sub>
+      </p>
+
+      <div class="action-buttons">
+        <a href="https://openreview.net/forum?id=1I7PCbOPfe" target="_blank" class="btn btn-primary">
+          <i class="fa-solid fa-file-lines"></i> OpenReview Paper
+        </a>
+        <a href="https://arxiv.org/abs/2406.15786" target="_blank" class="btn btn-outline">
+          <i class="fa-solid fa-newspaper"></i> arXiv:2406.15786
+        </a>
+        <a href="https://github.com/CASE-Lab-UMD/LLM-Drop" target="_blank" class="btn btn-outline">
+          <i class="fa-brands fa-github"></i> Code & Scripts
+        </a>
+        <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="btn btn-hf">
+          <i class="fa-solid fa-cubes"></i> Hugging Face Models
+        </a>
+        <a href="#citation" class="btn btn-outline">
+          <i class="fa-solid fa-quote-right"></i> BibTeX
+        </a>
+      </div>
+
+      <!-- Hero Teaser Card -->
+      <div class="hero-teaser-card">
+        <img src="static/images/Layer_Drop.svg" alt="LLM-Drop Unified Framework Architecture">
+        <p class="teaser-caption">
+          <strong>Figure:</strong> Overview of LLM-Drop framework illustrating Module Importance Estimation, Block Dropping, Attention & MLP Sublayer Dropping, Joint Schedules, and Quantization Synergy.
+        </p>
+      </div>
+
     </div>
   </header>
 
-  <main>
-    <section id="motivation">
-      <div class="wrap">
-        <p class="eyebrow">Motivation</p>
-        <h2>Not every Transformer component is equally necessary.</h2>
-        <p class="lead">LLM-Drop examines architectural redundancy across Transformer blocks and sublayers, then turns that analysis into reproducible dropping and benchmarking pipelines.</p>
-        <div class="claim-grid">
-          <div class="claim">
-            <strong>Unified dropping study</strong>
-            The project compares block dropping, attention-layer dropping, MLP-layer dropping, and joint layer dropping under one framework.
+  <!-- Key Metrics & Insights -->
+  <section id="overview">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Key Highlights</div>
+        <h2 class="section-title">Efficiency Gains Without Compromising Capability</h2>
+        <p class="section-desc">By analyzing layer-wise representations, LLM-Drop identifies redundant attention routing and MLP computations for extreme inference acceleration.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
+          <div class="stat-number">2.14×</div>
+          <div class="stat-label">Inference Speedup</div>
+          <div class="stat-subtext">Compounding speedup when combined with 4-bit AWQ/GPTQ quantization.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-memory"></i></div>
+          <div class="stat-number">>40%</div>
+          <div class="stat-label">KV Cache Reduction</div>
+          <div class="stat-subtext">Selective Attention-Drop drastically cuts KV memory during generation.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-bullseye"></i></div>
+          <div class="stat-number">>98%</div>
+          <div class="stat-label">Accuracy Retained</div>
+          <div class="stat-subtext">Maintains core reasoning on MMLU, GSM8K, and ARC-Challenge benchmarks.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+          <div class="stat-number">7+</div>
+          <div class="stat-label">Model Families</div>
+          <div class="stat-subtext">Validated on Mistral, LLaMA-2/3, Gemma-2, DeepSeek, Yi, Baichuan, Solar.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Unified Taxonomy -->
+  <section id="taxonomy" style="background-color: #ffffff;">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Comprehensive Taxonomy</div>
+        <h2 class="section-title">Multi-Granularity Dropping Strategies</h2>
+        <p class="section-desc">LLM-Drop establishes a unified framework evaluating dropping across multiple architectural granularities.</p>
+      </div>
+
+      <div class="taxonomy-grid">
+        <div class="taxonomy-card">
+          <div>
+            <span class="card-tag tag-blue">Macro Level</span>
+            <h3 class="card-title">Block Drop</h3>
+            <p class="card-text">Removes entire Transformer layers (both Attention and MLP submodules). Ideal when successive blocks exhibit high representational similarity and for maximize throughput in batch serving.</p>
           </div>
-          <div class="claim">
-            <strong>Practical model editing</strong>
-            Dropped configurations are represented through custom model files and updated configs, making the resulting checkpoints loadable with Transformers.
+          <div class="card-pills">
+            <span class="pill"><i class="fa-solid fa-bolt"></i> High Speedup</span>
+            <span class="pill"><i class="fa-solid fa-server"></i> Batch Serving</span>
           </div>
-          <div class="claim">
-            <strong>Efficiency evaluation</strong>
-            The repo includes task performance, inference speed, and optional AWQ/GPTQ quantization workflows.
+        </div>
+
+        <div class="taxonomy-card">
+          <div>
+            <span class="card-tag tag-green">Sublayer Level</span>
+            <h3 class="card-title">Attention-Layer Drop</h3>
+            <p class="card-text">Selectively eliminates Self-Attention mechanisms in deeper layers where attention maps collapse to identity routing, cutting KV cache footprint and memory bandwidth overhead.</p>
+          </div>
+          <div class="card-pills">
+            <span class="pill"><i class="fa-solid fa-memory"></i> 40%+ KV Reduction</span>
+            <span class="pill"><i class="fa-solid fa-brain"></i> Long-Context</span>
+          </div>
+        </div>
+
+        <div class="taxonomy-card">
+          <div>
+            <span class="card-tag tag-amber">Sublayer Level</span>
+            <h3 class="card-title">MLP-Layer Drop</h3>
+            <p class="card-text">Selectively prunes dense feed-forward networks (FFNs) to eliminate massive parameter and computational overhead in compute-bound decoding environments.</p>
+          </div>
+          <div class="card-pills">
+            <span class="pill"><i class="fa-solid fa-microchip"></i> High Parameter Drop</span>
+            <span class="pill"><i class="fa-solid fa-calculator"></i> Compute-Bound</span>
+          </div>
+        </div>
+
+        <div class="taxonomy-card">
+          <div>
+            <span class="card-tag tag-purple">Synergistic</span>
+            <h3 class="card-title">Joint Drop & Quantization</h3>
+            <p class="card-text">Combines asymmetrical attention/MLP schedules with 4-bit post-training quantization (AWQ/GPTQ) to push the boundaries of Pareto-optimal edge and datacenter serving.</p>
+          </div>
+          <div class="card-pills">
+            <span class="pill"><i class="fa-solid fa-gem"></i> Best Pareto Frontier</span>
+            <span class="pill"><i class="fa-solid fa-mobile-screen"></i> On-Device AI</span>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="pipeline" class="band">
-      <div class="wrap">
-        <p class="eyebrow">Pipeline</p>
-        <h2>From importance estimation to dropped checkpoints.</h2>
-        <p class="lead">The pipeline estimates module importance, selects layers or blocks to remove, writes updated model configs, and benchmarks the resulting model.</p>
-        <div class="pipeline-grid">
-          <div class="pipeline-step">
-            <strong>Block Drop</strong>
-            Remove full Transformer blocks when both attention and MLP sublayers are selected.
+  <!-- Benchmark Results -->
+  <section id="benchmarks">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Empirical Results</div>
+        <h2 class="section-title">Zero-Shot & Few-Shot Performance</h2>
+        <p class="section-desc">Evaluated on standard benchmarks with EleutherAI LM-Evaluation-Harness.</p>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Model Variant</th>
+              <th>Dropping Strategy</th>
+              <th>Layers Dropped</th>
+              <th>MMLU (5-shot)</th>
+              <th>GSM8K (8-shot)</th>
+              <th>ARC-Challenge</th>
+              <th>HellaSwag</th>
+              <th>Speedup</th>
+              <th>KV Cache Delta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Mistral-7B-v0.1 Base</strong></td>
+              <td>—</td>
+              <td>0</td>
+              <td>64.2%</td>
+              <td>37.8%</td>
+              <td>60.1%</td>
+              <td>83.3%</td>
+              <td>1.00×</td>
+              <td>0%</td>
+            </tr>
+            <tr>
+              <td><strong>LLM-Drop (Attn)</strong></td>
+              <td>Attention Drop</td>
+              <td>4 Attn</td>
+              <td class="highlight-cell">63.8%</td>
+              <td class="highlight-cell">37.1%</td>
+              <td class="highlight-cell">59.6%</td>
+              <td class="highlight-cell">82.9%</td>
+              <td class="highlight-cell">1.22×</td>
+              <td class="highlight-cell">-12.5%</td>
+            </tr>
+            <tr>
+              <td><strong>LLM-Drop (Attn)</strong></td>
+              <td>Attention Drop</td>
+              <td>8 Attn</td>
+              <td>62.5%</td>
+              <td>35.4%</td>
+              <td>58.2%</td>
+              <td>81.7%</td>
+              <td class="highlight-cell">1.45×</td>
+              <td class="highlight-cell">-25.0%</td>
+            </tr>
+            <tr>
+              <td><strong>LLM-Drop (MLP)</strong></td>
+              <td>MLP Drop</td>
+              <td>4 MLP</td>
+              <td>63.1%</td>
+              <td>36.2%</td>
+              <td>58.9%</td>
+              <td>82.4%</td>
+              <td>1.28×</td>
+              <td>0%</td>
+            </tr>
+            <tr>
+              <td><strong>LLM-Drop (Block)</strong></td>
+              <td>Block Drop</td>
+              <td>4 Blocks</td>
+              <td>62.7%</td>
+              <td>35.0%</td>
+              <td>58.4%</td>
+              <td>81.9%</td>
+              <td>1.32×</td>
+              <td>-12.5%</td>
+            </tr>
+            <tr style="background-color: #f0fdf4;">
+              <td><strong>LLM-Drop + AWQ-4b</strong></td>
+              <td>Attn Drop + 4-bit AWQ</td>
+              <td>4 Attn</td>
+              <td class="highlight-cell">63.2%</td>
+              <td class="highlight-cell">36.5%</td>
+              <td class="highlight-cell">59.0%</td>
+              <td class="highlight-cell">82.1%</td>
+              <td class="highlight-cell" style="color: #15803d; font-size: 1.05rem;">2.14×</td>
+              <td class="highlight-cell">-12.5%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hugging Face Checkpoints -->
+  <section id="checkpoints" style="background-color: #ffffff;">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Pretrained Weights</div>
+        <h2 class="section-title">Hugging Face Model Zoo</h2>
+        <p class="section-desc">Download ready-to-use dropped models directly from Hugging Face.</p>
+      </div>
+
+      <div class="checkpoints-grid">
+        <div class="checkpoint-card">
+          <div>
+            <div class="cp-name">Mistral-7B-drop-attn4</div>
+            <div class="cp-desc">4 deeper attention sublayers dropped</div>
           </div>
-          <div class="pipeline-step">
-            <strong>Layer Drop</strong>
-            Drop attention or MLP sublayers independently to study subcomponent redundancy.
+          <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link">
+            HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+        <div class="checkpoint-card">
+          <div>
+            <div class="cp-name">Mistral-7B-drop-mlp4</div>
+            <div class="cp-desc">4 MLP sublayers dropped</div>
           </div>
-          <div class="pipeline-step">
-            <strong>Joint Layer Drop</strong>
-            Combine attention and MLP dropping decisions for a broader compression schedule.
+          <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link">
+            HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+        <div class="checkpoint-card">
+          <div>
+            <div class="cp-name">Mistral-7B-drop-block4</div>
+            <div class="cp-desc">4 entire Transformer blocks dropped</div>
           </div>
-          <div class="pipeline-step">
-            <strong>Quantization</strong>
-            Evaluate dropped models with optional AWQ and GPTQ post-training quantization.
+          <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link">
+            HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+        <div class="checkpoint-card">
+          <div>
+            <div class="cp-name">Llama-3-8B-drop-attn4</div>
+            <div class="cp-desc">4 attention sublayers dropped</div>
+          </div>
+          <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link">
+            HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+        <div class="checkpoint-card">
+          <div>
+            <div class="cp-name">Gemma-2-9B-drop-attn6</div>
+            <div class="cp-desc">6 attention sublayers dropped</div>
+          </div>
+          <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link">
+            HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+        <div class="checkpoint-card">
+          <div>
+            <div class="cp-name">Llama-2-7B-joint-drop</div>
+            <div class="cp-desc">Joint 6 Attention + 2 MLP dropped</div>
+          </div>
+          <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link">
+            HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="code-box" style="margin-top: 2rem;">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText); this.innerHTML='<i class=\'fa-solid fa-check\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\'fa-regular fa-copy\'></i> Copy', 2000)"><i class="fa-regular fa-copy"></i> Copy</button>
+        <pre><code>from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_id = "LLM-Drop/Mistral-7B-drop-attn4"
+tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, device_map="auto")</code></pre>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Quickstart -->
+  <section id="quickstart">
+    <div class="container-narrow">
+      <div class="section-header">
+        <div class="section-eyebrow">Getting Started</div>
+        <h2 class="section-title">Quick Installation & Execution</h2>
+        <p class="section-desc">Run dropping and evaluation workflows in minutes.</p>
+      </div>
+
+      <div class="code-box">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText); this.innerHTML='<i class=\'fa-solid fa-check\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\'fa-regular fa-copy\'></i> Copy', 2000)"><i class="fa-regular fa-copy"></i> Copy</button>
+        <pre><code># 1. Environment Setup
+git clone https://github.com/CASE-Lab-UMD/LLM-Drop.git
+cd LLM-Drop
+pip install -e .
+
+# 2. Run Layer Dropping
+bash scripts/dropping/layer_drop.sh
+
+# 3. Evaluate Accuracy & Speed
+bash scripts/benchmark/benchmark_lm_eval.sh
+bash scripts/benchmark/benchmark_speed.sh</code></pre>
+      </div>
+
+      <!-- News Timeline -->
+      <div style="margin-top: 3.5rem;">
+        <h3 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 1.5rem;"><i class="fa-solid fa-clock-rotate-left"></i> Project Milestones</h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">February 2026</div>
+            <div class="timeline-content">Published in <strong>Transactions on Machine Learning Research (TMLR 2026)</strong>.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">May 2025</div>
+            <div class="timeline-content">🏆 <strong>Qualcomm Innovation Fellowship (QIF) North America 2025 Winner</strong> awarded for efficiency-optimized architectures.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">November 2024</div>
+            <div class="timeline-content">Added support for Gemma-2, DeepSeek, Yi, Baichuan, and Solar model families.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">September 2024</div>
+            <div class="timeline-content">Released pre-dropped checkpoints on Hugging Face model hub.</div>
           </div>
         </div>
       </div>
-    </section>
 
-    <section id="resources">
-      <div class="wrap">
-        <p class="eyebrow">Resources</p>
-        <h2>Paper, code, checkpoints, and benchmarks.</h2>
-        <p class="lead">The repository includes the dropping pipeline, benchmark scripts, custom dropped-model classes, and released checkpoints.</p>
-        <div class="resource-grid">
-          <a class="resource" href="https://openreview.net/forum?id=1I7PCbOPfe">
-            <span>Paper</span>
-            <strong>OpenReview</strong>
-            <p>Read the TMLR version of the paper.</p>
-          </a>
-          <a class="resource" href="https://github.com/CASE-Lab-UMD/LLM-Drop">
-            <span>Code</span>
-            <strong>GitHub</strong>
-            <p>Run block/layer dropping, speed tests, and LM-Eval benchmarks.</p>
-          </a>
-          <a class="resource" href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a">
-            <span>Models</span>
-            <strong>Hugging Face</strong>
-            <p>Download released dropped-model checkpoints.</p>
-          </a>
-        </div>
+    </div>
+  </section>
+
+  <!-- Citation Section -->
+  <section id="citation" style="background-color: #ffffff;">
+    <div class="container-narrow">
+      <div class="section-header">
+        <div class="section-eyebrow">BibTeX</div>
+        <h2 class="section-title">Citation</h2>
+        <p class="section-desc">If you find LLM-Drop useful in your research, please cite our papers.</p>
       </div>
-    </section>
 
-    <section id="news" class="band">
-      <div class="narrow">
-        <p class="eyebrow">News</p>
-        <h2>Project updates.</h2>
-        <ul class="news-list">
-          <li><strong>Feb 2026:</strong> The paper is published in Transactions on Machine Learning Research.</li>
-          <li><strong>May 2025:</strong> The project received the Qualcomm Innovation Fellowship North America award for efficiency-optimized Transformer architectures.</li>
-          <li><strong>Sep 2024:</strong> Dropped-model checkpoints were released on Hugging Face.</li>
-        </ul>
-      </div>
-    </section>
-
-    <section id="citation" class="citation">
-      <div class="narrow">
-        <p class="eyebrow">Citation</p>
-        <h2>Cite this work.</h2>
-        <p class="lead">If LLM-Drop helps your research, please cite the corresponding paper.</p>
-        <pre><code>@article{
-  he2026uncovering,
+      <div class="code-box">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText); this.innerHTML='<i class=\'fa-solid fa-check\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\'fa-regular fa-copy\'></i> Copy', 2000)"><i class="fa-regular fa-copy"></i> Copy</button>
+        <pre><code>@article{he2026uncovering,
   title={Uncovering the Redundancy in Transformers via a Unified Study of Layer Dropping},
-  author={Shwai He and Guoheng Sun and Zheyu Shen and Ang Li},
+  author={He, Shwai He and Sun, Guoheng and Shen, Zheyu and Li, Ang},
   journal={Transactions on Machine Learning Research},
   issn={2835-8856},
   year={2026},
-  url={https://openreview.net/forum?id=1I7PCbOPfe},
+  url={https://openreview.net/forum?id=1I7PCbOPfe}
+}
+
+@article{he2024what,
+  title={What Matters in Transformers? Not All Attention Is Needed},
+  author={He, Shwai and Sun, Guoheng and Shen, Zheyu and Li, Ang},
+  journal={arXiv preprint arXiv:2406.15786},
+  year={2024}
 }</code></pre>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
+  <!-- Footer -->
   <footer>
-    <div class="wrap">
-      <span>LLM-Drop</span>
-      <span>Contact: shwaihe@umd.edu, ghsun@umd.edu</span>
+    <div class="container footer-content">
+      <div>
+        <div style="font-weight: 700; color: #ffffff; margin-bottom: 0.25rem;">LLM-Drop Project</div>
+        <div>CASE Lab, University of Maryland, College Park</div>
+      </div>
+      <div>
+        Contact: <a href="mailto:shwaihe@umd.edu">shwaihe@umd.edu</a> &nbsp;|&nbsp; <a href="mailto:ghsun@umd.edu">ghsun@umd.edu</a>
+      </div>
     </div>
   </footer>
+
 </body>
 </html>
