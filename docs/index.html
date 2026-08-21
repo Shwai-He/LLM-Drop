@@ -53,8 +53,9 @@
       --border-subtle: #f1f5f9;
       --border-focus: #14b8a6;
       
-      --code-bg: #0f172a;
-      --code-fg: #f8fafc;
+      --code-bg: #f8fafc;
+      --code-fg: #0f172a;
+      --code-border: #e2e8f0;
       
       --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
       --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.06);
@@ -866,16 +867,16 @@
       border-radius: 1rem;
       padding: 1.35rem 1.5rem;
       overflow-x: auto;
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
       margin: 1.5rem 0;
-      border: 1px solid #1e293b;
+      border: 1px solid var(--code-border);
     }
 
     .code-box pre {
       margin: 0;
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.925rem;
-      color: #e2e8f0;
+      color: var(--code-fg);
       line-height: 1.65;
     }
 
@@ -883,9 +884,9 @@
       position: absolute;
       top: 1rem;
       right: 1rem;
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
       border-radius: 0.5rem;
       padding: 0.4rem 0.8rem;
       font-size: 0.8rem;
@@ -895,11 +896,13 @@
       align-items: center;
       gap: 0.4rem;
       transition: all 0.15s ease;
-      backdrop-filter: blur(4px);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
 
     .copy-btn:hover {
-      background: rgba(255, 255, 255, 0.25);
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #94a3b8;
     }
 
     /* Quickstart Tabs */
@@ -929,8 +932,9 @@
 
     .tab-btn.active {
       background: var(--code-bg);
-      color: #ffffff;
-      border-color: #1e293b;
+      color: var(--primary-dark);
+      border-color: var(--code-border);
+      border-bottom: 1px solid var(--code-bg);
     }
 
     .tab-content {
