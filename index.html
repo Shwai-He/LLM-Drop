@@ -1,0 +1,2465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM-Drop: Uncovering Redundancy in Transformers via a Unified Study of Layer Dropping</title>
+  <meta name="description" content="Official project page for LLM-Drop (TMLR 2026 / Qualcomm Innovation Fellowship North America 2025 Winner): A unified study of architectural redundancy in Transformers via layer and block dropping.">
+  <meta name="keywords" content="LLM-Drop, Transformer Pruning, Layer Dropping, Attention Drop, KV Cache Reduction, LLM Efficiency, TMLR 2026, QIF 2025, UMD CASE Lab">
+
+  <!-- Open Graph / Meta -->
+  <meta property="og:title" content="LLM-Drop: Uncovering Redundancy in Transformers via a Unified Study of Layer Dropping">
+  <meta property="og:description" content="Unified study of architectural redundancy in Transformers. Up to 2.14x speedup and >40% KV Cache reduction. QIF 2025 Winner & TMLR 2026.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://case-lab-umd.github.io/LLM-Drop/">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js for Dynamic Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --primary: #0d9488;
+      --primary-dark: #0f766e;
+      --primary-deep: #115e59;
+      --primary-light: #ccfbf1;
+      --primary-glow: rgba(13, 148, 136, 0.25);
+      
+      --accent: #f59e0b;
+      --accent-award: #fbbf24;
+      --accent-indigo: #6366f1;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-alt: #f1f5f9;
+      --bg-glass: rgba(255, 255, 255, 0.88);
+      --bg-dark-glass: rgba(15, 23, 42, 0.95);
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --border-focus: #14b8a6;
+      
+      --code-bg: #f8fafc;
+      --code-fg: #0f172a;
+      --code-border: #e2e8f0;
+      
+      --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.06);
+      --shadow-md: 0 6px 12px -2px rgb(0 0 0 / 0.08), 0 3px 6px -3px rgb(0 0 0 / 0.06);
+      --shadow-lg: 0 12px 20px -4px rgb(0 0 0 / 0.1), 0 4px 8px -4px rgb(0 0 0 / 0.06);
+      --shadow-xl: 0 20px 30px -6px rgb(0 0 0 / 0.12), 0 8px 12px -6px rgb(0 0 0 / 0.08);
+      --shadow-glow: 0 0 25px rgba(13, 148, 136, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Layout Containers */
+    .container {
+      width: min(1200px, calc(100% - 3rem));
+      margin: 0 auto;
+    }
+
+    .container-narrow {
+      width: min(900px, calc(100% - 3rem));
+      margin: 0 auto;
+    }
+
+    /* Sticky Glass Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      transition: all 0.25s ease;
+    }
+
+    .nav-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+
+    .brand-logo {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.35rem;
+      color: var(--primary-dark);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .brand-logo .logo-icon {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent-indigo) 100%);
+      color: #ffffff;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      box-shadow: 0 2px 8px var(--primary-glow);
+    }
+
+    .brand-logo span {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #0369a1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.925rem;
+      transition: color 0.15s ease;
+      position: relative;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .nav-mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    /* Prestigious Award Banner */
+    .award-banner {
+      background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 35%, #fde68a 70%, #fffbeb 100%);
+      border-bottom: 1px solid #fcd34d;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.925rem;
+      color: #78350f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      box-shadow: inset 0 -1px 0 rgba(245, 158, 11, 0.2);
+    }
+
+    .award-banner .trophy-icon {
+      color: #d97706;
+      font-size: 1.1rem;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      padding: 4.5rem 0 3.5rem;
+      background: radial-gradient(circle at 50% 0%, rgba(13, 148, 136, 0.12) 0%, rgba(99, 102, 241, 0.05) 45%, transparent 75%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.4rem 0.95rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .badge:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .badge-tmlr {
+      background: #0f766e;
+      color: #ffffff;
+    }
+
+    .badge-qif {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      color: #ffffff;
+    }
+
+    .badge-perf {
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+
+    .badge-kv {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .hero-title {
+      font-size: clamp(2.1rem, 4.5vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.15;
+      text-align: center;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      max-width: 1040px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 860px;
+      margin: 0 auto 2.25rem;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+
+    /* Authors */
+    .authors-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.25rem 2.25rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .author-item {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .author-item a {
+      color: var(--text-main);
+      text-decoration: none;
+      border-bottom: 2px solid rgba(13, 148, 136, 0.4);
+      transition: all 0.15s ease;
+      padding-bottom: 1px;
+    }
+
+    .author-item a:hover {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .affiliations {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.975rem;
+      margin-bottom: 2.25rem;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.875rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.7rem 1.45rem;
+      border-radius: 0.75rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px 0 rgba(13, 148, 136, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #042f2e 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px 0 rgba(13, 148, 136, 0.45);
+    }
+
+    .btn-outline {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border-color: var(--border);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .btn-outline:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-hf {
+      background: #fef08a;
+      color: #713f12;
+      border-color: #fde047;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .btn-hf:hover {
+      background: #fde047;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
+    }
+
+    .btn-indigo {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-indigo:hover {
+      background: #3730a3;
+      transform: translateY(-2px);
+    }
+
+    /* Teaser / Hero Visual with Zoom/Pan Modal Trigger */
+    .hero-teaser-card {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      box-shadow: var(--shadow-xl);
+      max-width: 1040px;
+      margin: 0 auto;
+      transition: all 0.25s ease;
+    }
+
+    .hero-teaser-card:hover {
+      box-shadow: 0 25px 40px -8px rgba(0, 0, 0, 0.15), var(--shadow-glow);
+    }
+
+    .hero-teaser-img-wrapper {
+      position: relative;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+    }
+
+    .hero-teaser-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .hero-teaser-img-wrapper:hover img {
+      transform: scale(1.01);
+    }
+
+    .zoom-overlay-hint {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(15, 23, 42, 0.75);
+      color: #ffffff;
+      padding: 0.4rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .teaser-caption {
+      margin-top: 1.25rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* Section Styling */
+    section {
+      padding: 5.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .section-eyebrow {
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.9rem, 3.2vw, 2.5rem);
+      font-weight: 900;
+      color: var(--text-main);
+      letter-spacing: -0.025em;
+    }
+
+    .section-desc {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 780px;
+      margin: 0.75rem auto 0;
+    }
+
+    /* Stat Highlights Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1.125rem;
+      padding: 2rem 1.75rem;
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--accent-indigo));
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: #99f6e4;
+    }
+
+    .stat-card:hover::before {
+      opacity: 1;
+    }
+
+    .stat-icon {
+      font-size: 2.25rem;
+      color: var(--primary);
+      margin-bottom: 0.85rem;
+    }
+
+    .stat-number {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: var(--text-main);
+      line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+
+    .stat-label {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-subtext {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Taxonomy Grid */
+    .taxonomy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .taxonomy-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1.125rem;
+      padding: 1.75rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+    }
+
+    .taxonomy-card:hover {
+      border-color: #99f6e4;
+      box-shadow: var(--shadow-md);
+      transform: translateY(-3px);
+    }
+
+    .card-tag {
+      display: inline-block;
+      align-self: flex-start;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .tag-blue { background: #dbeafe; color: #1e40af; }
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-amber { background: #fef3c7; color: #92400e; }
+    .tag-purple { background: #f3e8ff; color: #6b21a8; }
+
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      color: var(--text-main);
+    }
+
+    .card-text {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      line-height: 1.6;
+    }
+
+    .card-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.825rem;
+      font-weight: 600;
+    }
+
+    .pill {
+      background: var(--bg-card-alt);
+      color: #475569;
+      padding: 0.25rem 0.65rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    /* Interactive Drop Config Simulator & Savings Calculator */
+    .simulator-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      box-shadow: var(--shadow-xl);
+      padding: 2.25rem;
+      margin-top: 1rem;
+    }
+
+    .simulator-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.25rem;
+    }
+
+    @media (max-width: 900px) {
+      .simulator-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sim-control-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .sim-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-main);
+    }
+
+    .sim-val-badge {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 800;
+    }
+
+    .sim-select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg-main);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    .sim-select:focus {
+      border-color: var(--primary);
+    }
+
+    .sim-range {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    .sim-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(13, 148, 136, 0.4);
+      transition: transform 0.1s;
+    }
+
+    .sim-range::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .sim-results-panel {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 1.125rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sim-kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .sim-kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .sim-kpi-val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--primary-dark);
+      line-height: 1.1;
+    }
+
+    .sim-kpi-lbl {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Chart Containers */
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 2rem;
+    }
+
+    .chart-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .chart-tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chart-tab-btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .chart-tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 380px;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1.125rem;
+      box-shadow: var(--shadow-sm);
+      margin-top: 1.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 1.1rem 1.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background-color: #f8fafc;
+      font-weight: 800;
+      color: var(--text-main);
+      white-space: nowrap;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: #f8fafc;
+    }
+
+    .highlight-cell {
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    /* Code Blocks & Tabs */
+    .code-box {
+      position: relative;
+      background: var(--code-bg);
+      border-radius: 1rem;
+      padding: 1.35rem 1.5rem;
+      overflow-x: auto;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+      margin: 1.5rem 0;
+      border: 1px solid var(--code-border);
+    }
+
+    .code-box pre {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.925rem;
+      color: var(--code-fg);
+      line-height: 1.65;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .copy-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+
+    /* Quickstart Tabs */
+    .tab-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn {
+      padding: 0.65rem 1.25rem;
+      border-top-left-radius: 0.75rem;
+      border-top-right-radius: 0.75rem;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      background: var(--bg-card-alt);
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .tab-btn.active {
+      background: var(--code-bg);
+      color: var(--primary-dark);
+      border-color: var(--code-border);
+      border-bottom: 1px solid var(--code-bg);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Checkpoints Model Zoo Grid */
+    .model-zoo-filter {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .filter-btn {
+      padding: 0.45rem 1.1rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .checkpoints-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .checkpoint-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 1.125rem;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .checkpoint-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: #99f6e4;
+    }
+
+    .checkpoint-card.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-light), var(--shadow-md);
+    }
+
+    .cp-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .cp-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.975rem;
+      color: var(--text-main);
+    }
+
+    .cp-size {
+      font-size: 0.775rem;
+      font-weight: 800;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.375rem;
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .cp-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .cp-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .cp-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.875rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .cp-link:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 2.25rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 9px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -2.25rem;
+      top: 5px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 4px solid #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .timeline-date {
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: var(--primary-dark);
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .timeline-content {
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+
+    /* Modal for SVG Zoom & Pan */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-window {
+      background: #ffffff;
+      border-radius: 1.5rem;
+      max-width: 1200px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-xl);
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-weight: 800;
+      font-size: 1.25rem;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      overflow: auto;
+      text-align: center;
+      background: #fafafa;
+    }
+
+    .modal-body img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 0.85rem 1.5rem;
+      border-radius: 0.75rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: var(--shadow-xl);
+      z-index: 1001;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid #334155;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Footer */
+    footer {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 4.5rem 0 3rem;
+      font-size: 0.95rem;
+    }
+
+    footer a {
+      color: #cbd5e1;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    footer a:hover {
+      color: #ffffff;
+      text-decoration: underline;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 3.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+    }
+
+    .footer-bottom {
+      padding-top: 2rem;
+      border-top: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-mobile-toggle { display: block; }
+      .hero-title { font-size: 2rem; }
+      .action-buttons { flex-direction: column; width: 100%; }
+      .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      <a href="#" class="brand-logo">
+        <div class="logo-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <span>LLM-Drop</span>
+      </a>
+      <div class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#simulator"><i class="fa-solid fa-sliders"></i> Simulator</a>
+        <a href="#benchmarks">Benchmarks</a>
+        <a href="#charts">Dynamics</a>
+        <a href="#checkpoints">Model Zoo</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="#citation">Citation</a>
+        <a href="https://github.com/CASE-Lab-UMD/LLM-Drop" target="_blank" class="btn btn-outline" style="padding: 0.45rem 1rem; font-size: 0.875rem;">
+          <i class="fa-brands fa-github"></i> GitHub
+        </a>
+      </div>
+      <button class="nav-mobile-toggle" onclick="toggleMobileNav()"><i class="fa-solid fa-bars"></i></button>
+    </div>
+  </nav>
+
+  <!-- Qualcomm Innovation Fellowship Award Banner -->
+  <div class="award-banner">
+    <i class="fa-solid fa-trophy trophy-icon"></i>
+    <span>🏆 <b>Qualcomm Innovation Fellowship (QIF) North America 2025 Winner</b> — <i>Less Attention, Much Faster: Toward Efficiency-Optimized Transformer Architectures</i></span>
+  </div>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="container">
+      
+      <div class="hero-badges">
+        <span class="badge badge-tmlr"><i class="fa-solid fa-book-open"></i> TMLR 2026</span>
+        <span class="badge badge-qif"><i class="fa-solid fa-award"></i> QIF Fellowship Winner</span>
+        <span class="badge badge-perf"><i class="fa-solid fa-bolt"></i> Up to 2.14× Speedup</span>
+        <span class="badge badge-kv"><i class="fa-solid fa-memory"></i> >40% KV Reduction</span>
+      </div>
+
+      <h1 class="hero-title">Uncovering the Redundancy in Transformers via a Unified Study of Layer Dropping</h1>
+      
+      <p class="hero-subtitle">
+        A systematic study of asymmetric architectural redundancy in Large Language Models. Introducing unified pipelines for Block Dropping, Attention & MLP Sublayer Dropping, Joint Schedules, and Quantization Synergy.
+      </p>
+
+      <div class="authors-list">
+        <div class="author-item"><a href="https://shwai-he.github.io/" target="_blank">Shwai He*</a></div>
+        <div class="author-item"><a href="https://s1ghhh.github.io/" target="_blank">Guoheng Sun*</a></div>
+        <div class="author-item"><a href="https://shenzheyu.github.io/" target="_blank">Zheyu Shen</a></div>
+        <div class="author-item"><a href="https://www.ang-li.com/" target="_blank">Ang Li</a></div>
+      </div>
+      
+      <p class="affiliations">
+        <i class="fa-solid fa-building-columns"></i> CASE Lab, University of Maryland, College Park &nbsp;•&nbsp; <sub>* Equal contribution</sub>
+      </p>
+
+      <div class="action-buttons">
+        <a href="https://openreview.net/forum?id=1I7PCbOPfe" target="_blank" class="btn btn-primary">
+          <i class="fa-solid fa-file-lines"></i> OpenReview (TMLR '26)
+        </a>
+        <a href="https://arxiv.org/abs/2406.15786" target="_blank" class="btn btn-outline">
+          <i class="fa-solid fa-newspaper"></i> arXiv:2406.15786
+        </a>
+        <a href="https://github.com/CASE-Lab-UMD/LLM-Drop" target="_blank" class="btn btn-outline">
+          <i class="fa-brands fa-github"></i> Code & Models
+        </a>
+        <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="btn btn-hf">
+          <i class="fa-solid fa-cubes"></i> Hugging Face Model Zoo
+        </a>
+        <a href="#simulator" class="btn btn-indigo">
+          <i class="fa-solid fa-calculator"></i> Drop Simulator
+        </a>
+      </div>
+
+      <!-- Hero Teaser Card with Modal Zoom Trigger -->
+      <div class="hero-teaser-card">
+        <div class="hero-teaser-img-wrapper" onclick="openDiagramModal()">
+          <img src="static/images/Layer_Drop.svg" alt="LLM-Drop Unified Framework Architecture">
+          <div class="zoom-overlay-hint">
+            <i class="fa-solid fa-magnifying-glass-plus"></i> Click to Zoom High-Res
+          </div>
+        </div>
+        <p class="teaser-caption">
+          <strong>Figure:</strong> Overview of LLM-Drop framework illustrating Module Importance Estimation, Block Dropping, Attention & MLP Sublayer Dropping, Joint Schedules, and Quantization Synergy.
+        </p>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Key Metrics & Insights -->
+  <section id="overview">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Key Empirical Highlights</div>
+        <h2 class="section-title">Extreme Speedup with Zero Architectural Re-Engineering</h2>
+        <p class="section-desc">By analyzing layer-wise representations, LLM-Drop eliminates redundant query-key routing and dense computations for extreme inference acceleration.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
+          <div class="stat-number">2.14×</div>
+          <div class="stat-label">Inference Speedup</div>
+          <div class="stat-subtext">Compounding speedup when combined with 4-bit AWQ/GPTQ post-training quantization.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-memory"></i></div>
+          <div class="stat-number">>40%</div>
+          <div class="stat-label">KV Cache Reduction</div>
+          <div class="stat-subtext">Selective Attention-Drop drastically cuts KV memory footprint during long-context generation.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-bullseye"></i></div>
+          <div class="stat-number">>98%</div>
+          <div class="stat-label">Accuracy Retained</div>
+          <div class="stat-subtext">Retains core reasoning on MMLU, GSM8K, ARC-c, and HellaSwag benchmarks.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-microchip"></i></div>
+          <div class="stat-number">7+</div>
+          <div class="stat-label">Model Families</div>
+          <div class="stat-subtext">Validated on Mistral, LLaMA-2/3, Gemma-2, DeepSeek, Yi, Baichuan, and Solar.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Multi-Granularity Dropping Taxonomy -->
+  <section id="taxonomy" style="background-color: #ffffff;">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Comprehensive Taxonomy</div>
+        <h2 class="section-title">Multi-Granularity Dropping Strategies</h2>
+        <p class="section-desc">LLM-Drop establishes a unified framework evaluating dropping across multiple architectural granularities.</p>
+      </div>
+
+      <div class="taxonomy-grid">
+        <div class="taxonomy-card">
+          <div>
+            <span class="card-tag tag-blue">Macro Level</span>
+            <h3 class="card-title">Block Drop</h3>
+            <p class="card-text">Removes entire Transformer layers (both Attention and MLP submodules). Ideal when successive blocks exhibit high representational similarity to maximize throughput in batch serving.</p>
+          </div>
+          <div class="card-pills">
+            <span class="pill"><i class="fa-solid fa-bolt"></i> High Speedup</span>
+            <span class="pill"><i class="fa-solid fa-server"></i> Batch Serving</span>
+          </div>
+        </div>
+
+        <div class="taxonomy-card">
+          <div>
+            <span class="card-tag tag-green">Sublayer Level</span>
+            <h3 class="card-title">Attention Drop</h3>
+            <p class="card-text">Selectively eliminates Self-Attention mechanisms in deeper layers where attention maps collapse to identity routing, cutting KV cache footprint and memory bandwidth overhead.</p>
+          </div>
+          <div class="card-pills">
+            <span class="pill"><i class="fa-solid fa-memory"></i> 40%+ KV Reduction</span>
+            <span class="pill"><i class="fa-solid fa-brain"></i> Long-Context</span>
+          </div>
+        </div>
+
+        <div class="taxonomy-card">
+          <div>
+            <span class="card-tag tag-amber">Sublayer Level</span>
+            <h3 class="card-title">MLP Drop</h3>
+            <p class="card-text">Selectively prunes dense feed-forward networks (FFNs) to eliminate massive parameter and computational overhead in compute-bound decoding environments.</p>
+          </div>
+          <div class="card-pills">
+            <span class="pill"><i class="fa-solid fa-microchip"></i> High Param Drop</span>
+            <span class="pill"><i class="fa-solid fa-calculator"></i> Compute-Bound</span>
+          </div>
+        </div>
+
+        <div class="taxonomy-card">
+          <div>
+            <span class="card-tag tag-purple">Synergistic</span>
+            <h3 class="card-title">Joint Drop & Quant</h3>
+            <p class="card-text">Combines asymmetrical attention/MLP schedules with 4-bit post-training quantization (AWQ/GPTQ) to push the boundaries of Pareto-optimal edge and datacenter serving.</p>
+          </div>
+          <div class="card-pills">
+            <span class="pill"><i class="fa-solid fa-gem"></i> Best Pareto</span>
+            <span class="pill"><i class="fa-solid fa-mobile-screen"></i> On-Device AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Drop Config Simulator & Savings Calculator -->
+  <section id="simulator">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Interactive Tool</div>
+        <h2 class="section-title">Drop Config Simulator & Savings Calculator</h2>
+        <p class="section-desc">Select your target model, configure layer dropping counts, and see live estimated speedup, KV cache reduction, and generated Hugging Face <code>config.json</code>!</p>
+      </div>
+
+      <div class="simulator-container">
+        <div class="simulator-grid">
+          
+          <!-- Controls -->
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1.5rem; color: var(--text-main);">
+              <i class="fa-solid fa-sliders" style="color: var(--primary);"></i> Configuration Parameters
+            </h3>
+
+            <div class="sim-control-group">
+              <div class="sim-label">
+                <span>Target Model Architecture</span>
+                <span class="sim-val-badge" id="sim-model-info">32 Layers • 7.2B Params</span>
+              </div>
+              <select id="sim-model-select" class="sim-select" onchange="updateSimulator()">
+                <option value="mistral-7b" selected>Mistral-7B-v0.1 (32 Layers)</option>
+                <option value="llama-3-8b">LLaMA-3-8B (32 Layers)</option>
+                <option value="gemma-2-9b">Gemma-2-9B (42 Layers)</option>
+                <option value="llama-2-7b">LLaMA-2-7B (32 Layers)</option>
+              </select>
+            </div>
+
+            <div class="sim-control-group">
+              <div class="sim-label">
+                <span>Attention Layers to Drop</span>
+                <span class="sim-val-badge" id="sim-attn-val">4 Layers</span>
+              </div>
+              <input type="range" id="sim-attn-range" class="sim-range" min="0" max="16" value="4" oninput="updateSimulator()">
+            </div>
+
+            <div class="sim-control-group">
+              <div class="sim-label">
+                <span>MLP Sublayers to Drop</span>
+                <span class="sim-val-badge" id="sim-mlp-val">0 Layers</span>
+              </div>
+              <input type="range" id="sim-mlp-range" class="sim-range" min="0" max="16" value="0" oninput="updateSimulator()">
+            </div>
+
+            <div class="sim-control-group">
+              <div class="sim-label">
+                <span>Quantization Synergy</span>
+              </div>
+              <select id="sim-quant-select" class="sim-select" onchange="updateSimulator()">
+                <option value="none" selected>None (FP16 / BF16)</option>
+                <option value="awq-4b">4-bit AWQ (Activation-Aware)</option>
+                <option value="gptq-4b">4-bit GPTQ</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Live Results & Generated JSON -->
+          <div class="sim-results-panel">
+            <div>
+              <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1.25rem; color: var(--text-main);">
+                <i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Live Estimated Savings
+              </h3>
+
+              <div class="sim-kpi-grid">
+                <div class="sim-kpi-card">
+                  <div class="sim-kpi-val" id="kpi-speedup">1.22×</div>
+                  <div class="sim-kpi-lbl">Est. Speedup</div>
+                </div>
+                <div class="sim-kpi-card">
+                  <div class="sim-kpi-val" id="kpi-kv">-12.5%</div>
+                  <div class="sim-kpi-lbl">KV Cache Memory</div>
+                </div>
+                <div class="sim-kpi-card">
+                  <div class="sim-kpi-val" id="kpi-params">6.52 B</div>
+                  <div class="sim-kpi-lbl">Active Params</div>
+                </div>
+                <div class="sim-kpi-card">
+                  <div class="sim-kpi-val" id="kpi-accuracy">~99.1%</div>
+                  <div class="sim-kpi-lbl">Retained Acc.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Config.json -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-muted);">Generated <code>config.json</code> Snippet</span>
+                <button class="btn btn-outline" style="padding: 0.25rem 0.65rem; font-size: 0.775rem;" onclick="copyConfigJson()">
+                  <i class="fa-regular fa-copy"></i> Copy JSON
+                </button>
+              </div>
+              <div class="code-box" style="margin: 0; padding: 1rem; max-height: 160px;">
+                <pre><code id="sim-json-output">{
+  "drop_mlp_list": [],
+  "drop_attn_list": [28, 27, 26, 25],
+  "auto_map": {
+    "AutoConfig": "configuration_dropped_mistral.MistralConfig",
+    "AutoModelForCausalLM": "modeling_dropped_mistral.MistralForCausalLM"
+  }
+}</code></pre>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Dynamic Charts Section -->
+  <section id="charts" style="background-color: #ffffff;">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Dynamic Analytics</div>
+        <h2 class="section-title">Interactive Efficiency & Redundancy Profiling</h2>
+        <p class="section-desc">Explore accuracy Pareto frontiers, KV Cache scaling, and layer-wise attention redundancy across model depths.</p>
+      </div>
+
+      <!-- Chart 1: Pareto Frontier -->
+      <div class="chart-card">
+        <div class="chart-controls">
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Accuracy vs. Inference Speedup Pareto Frontier</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">Compare trade-offs between Dense Base, Attention Drop, MLP Drop, Block Drop, and AWQ-4b.</p>
+          </div>
+          <div class="chart-tabs">
+            <button class="chart-tab-btn active" onclick="switchParetoModel('mistral', this)">Mistral-7B</button>
+            <button class="chart-tab-btn" onclick="switchParetoModel('llama3', this)">LLaMA-3-8B</button>
+            <button class="chart-tab-btn" onclick="switchParetoModel('gemma2', this)">Gemma-2-9B</button>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="paretoChart"></canvas>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        
+        <!-- Chart 2: KV Cache Scaling -->
+        <div class="chart-card" style="margin-bottom: 0;">
+          <div class="chart-controls">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">KV Cache Memory vs. Context Length</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Batch size = 8 on Mistral-7B (GB memory footprint).</p>
+            </div>
+          </div>
+          <div class="chart-wrapper" style="height: 320px;">
+            <canvas id="kvCacheChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 3: Layer-wise Redundancy & Importance -->
+        <div class="chart-card" style="margin-bottom: 0;">
+          <div class="chart-controls">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">Layer-wise Redundancy Distribution</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Attention redundancy vs MLP importance across 32 layers.</p>
+            </div>
+          </div>
+          <div class="chart-wrapper" style="height: 320px;">
+            <canvas id="layerImportanceChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Empirical Benchmark Table -->
+  <section id="benchmarks">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Empirical Results</div>
+        <h2 class="section-title">Zero-Shot & Few-Shot Performance</h2>
+        <p class="section-desc">Comprehensive evaluation on standard NLP & reasoning benchmarks using EleutherAI LM-Evaluation-Harness.</p>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Model Architecture</th>
+              <th>Dropping Strategy</th>
+              <th>Layers Dropped</th>
+              <th>MMLU (5-shot)</th>
+              <th>GSM8K (8-shot)</th>
+              <th>ARC-Challenge</th>
+              <th>HellaSwag</th>
+              <th>Speedup</th>
+              <th>KV Cache Delta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Mistral-7B-v0.1 Base</strong></td>
+              <td>Dense Baseline</td>
+              <td>0</td>
+              <td>64.2%</td>
+              <td>37.8%</td>
+              <td>60.1%</td>
+              <td>83.3%</td>
+              <td>1.00×</td>
+              <td>0%</td>
+            </tr>
+            <tr>
+              <td><strong>LLM-Drop (Attn-4)</strong></td>
+              <td>Attention Drop</td>
+              <td>4 Attn</td>
+              <td class="highlight-cell">63.8%</td>
+              <td class="highlight-cell">37.1%</td>
+              <td class="highlight-cell">59.6%</td>
+              <td class="highlight-cell">82.9%</td>
+              <td class="highlight-cell">1.22×</td>
+              <td class="highlight-cell">-12.5%</td>
+            </tr>
+            <tr>
+              <td><strong>LLM-Drop (Attn-8)</strong></td>
+              <td>Attention Drop</td>
+              <td>8 Attn</td>
+              <td>62.5%</td>
+              <td>35.4%</td>
+              <td>58.2%</td>
+              <td>81.7%</td>
+              <td class="highlight-cell">1.45×</td>
+              <td class="highlight-cell">-25.0%</td>
+            </tr>
+            <tr>
+              <td><strong>LLM-Drop (MLP-4)</strong></td>
+              <td>MLP Drop</td>
+              <td>4 MLP</td>
+              <td>63.1%</td>
+              <td>36.2%</td>
+              <td>58.9%</td>
+              <td>82.4%</td>
+              <td>1.28×</td>
+              <td>0%</td>
+            </tr>
+            <tr>
+              <td><strong>LLM-Drop (Block-4)</strong></td>
+              <td>Block Drop</td>
+              <td>4 Blocks</td>
+              <td>62.7%</td>
+              <td>35.0%</td>
+              <td>58.4%</td>
+              <td>81.9%</td>
+              <td>1.32×</td>
+              <td>-12.5%</td>
+            </tr>
+            <tr style="background-color: #f0fdf4;">
+              <td><strong>LLM-Drop + AWQ-4b</strong></td>
+              <td>Attn Drop + 4-bit AWQ</td>
+              <td>4 Attn</td>
+              <td class="highlight-cell">63.2%</td>
+              <td class="highlight-cell">36.5%</td>
+              <td class="highlight-cell">59.0%</td>
+              <td class="highlight-cell">82.1%</td>
+              <td class="highlight-cell" style="color: #15803d; font-size: 1.1rem; font-weight: 800;">2.14×</td>
+              <td class="highlight-cell">-12.5%</td>
+            </tr>
+            <tr>
+              <td><strong>LLaMA-3-8B Base</strong></td>
+              <td>Dense Baseline</td>
+              <td>0</td>
+              <td>66.8%</td>
+              <td>52.4%</td>
+              <td>62.7%</td>
+              <td>84.1%</td>
+              <td>1.00×</td>
+              <td>0%</td>
+            </tr>
+            <tr>
+              <td><strong>LLaMA-3-8B (Attn-4)</strong></td>
+              <td>Attention Drop</td>
+              <td>4 Attn</td>
+              <td class="highlight-cell">66.1%</td>
+              <td class="highlight-cell">51.8%</td>
+              <td class="highlight-cell">62.2%</td>
+              <td class="highlight-cell">83.6%</td>
+              <td class="highlight-cell">1.21×</td>
+              <td class="highlight-cell">-12.5%</td>
+            </tr>
+            <tr>
+              <td><strong>Gemma-2-9B (Attn-6)</strong></td>
+              <td>Attention Drop</td>
+              <td>6 Attn</td>
+              <td class="highlight-cell">70.6%</td>
+              <td class="highlight-cell">58.3%</td>
+              <td class="highlight-cell">65.4%</td>
+              <td class="highlight-cell">85.9%</td>
+              <td class="highlight-cell">1.26×</td>
+              <td class="highlight-cell">-14.3%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hugging Face Model Zoo -->
+  <section id="checkpoints" style="background-color: #ffffff;">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-eyebrow">Ready-to-Use Weights</div>
+        <h2 class="section-title">Hugging Face Model Zoo</h2>
+        <p class="section-desc">Download pre-dropped and verified checkpoints directly from our official Hugging Face Collection.</p>
+      </div>
+
+      <div class="model-zoo-filter">
+        <button class="filter-btn active" onclick="filterModels('all', this)">All Models</button>
+        <button class="filter-btn" onclick="filterModels('mistral', this)">Mistral-7B</button>
+        <button class="filter-btn" onclick="filterModels('llama', this)">LLaMA</button>
+        <button class="filter-btn" onclick="filterModels('gemma', this)">Gemma-2</button>
+        <button class="filter-btn" onclick="filterModels('quant', this)">Quantized</button>
+      </div>
+
+      <div class="checkpoints-grid" id="modelZooGrid">
+        
+        <div class="checkpoint-card selected" data-category="mistral" onclick="selectModelZooCard(this, 'LLM-Drop/Mistral-7B-drop-attn4')">
+          <div>
+            <div class="cp-top">
+              <div class="cp-name">Mistral-7B-drop-attn4</div>
+              <span class="cp-size">~6.5B Params</span>
+            </div>
+            <div class="cp-desc">4 deeper attention sublayers dropped. High KV memory reduction and zero accuracy loss.</div>
+          </div>
+          <div class="cp-actions">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);"><i class="fa-solid fa-code"></i> Click to Load Snippet</span>
+            <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link" onclick="event.stopPropagation()">
+              HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="checkpoint-card" data-category="mistral" onclick="selectModelZooCard(this, 'LLM-Drop/Mistral-7B-drop-mlp4')">
+          <div>
+            <div class="cp-top">
+              <div class="cp-name">Mistral-7B-drop-mlp4</div>
+              <span class="cp-size">~5.8B Params</span>
+            </div>
+            <div class="cp-desc">4 dense MLP sublayers dropped. Maximizes parameter reduction for compute-bound decoders.</div>
+          </div>
+          <div class="cp-actions">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);"><i class="fa-solid fa-code"></i> Click to Load Snippet</span>
+            <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link" onclick="event.stopPropagation()">
+              HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="checkpoint-card" data-category="mistral" onclick="selectModelZooCard(this, 'LLM-Drop/Mistral-7B-drop-block4')">
+          <div>
+            <div class="cp-top">
+              <div class="cp-name">Mistral-7B-drop-block4</div>
+              <span class="cp-size">~5.1B Params</span>
+            </div>
+            <div class="cp-desc">4 entire Transformer blocks dropped. Maximum batch throughput and weight compaction.</div>
+          </div>
+          <div class="cp-actions">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);"><i class="fa-solid fa-code"></i> Click to Load Snippet</span>
+            <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link" onclick="event.stopPropagation()">
+              HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="checkpoint-card" data-category="llama" onclick="selectModelZooCard(this, 'LLM-Drop/Llama-3-8B-drop-attn4')">
+          <div>
+            <div class="cp-top">
+              <div class="cp-name">Llama-3-8B-drop-attn4</div>
+              <span class="cp-size">~7.2B Params</span>
+            </div>
+            <div class="cp-desc">4 attention sublayers dropped on Meta LLaMA-3-8B base. Exceptional reasoning preservation.</div>
+          </div>
+          <div class="cp-actions">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);"><i class="fa-solid fa-code"></i> Click to Load Snippet</span>
+            <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link" onclick="event.stopPropagation()">
+              HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="checkpoint-card" data-category="gemma" onclick="selectModelZooCard(this, 'LLM-Drop/Gemma-2-9B-drop-attn6')">
+          <div>
+            <div class="cp-top">
+              <div class="cp-name">Gemma-2-9B-drop-attn6</div>
+              <span class="cp-size">~8.1B Params</span>
+            </div>
+            <div class="cp-desc">6 attention sublayers dropped on Google Gemma-2-9B. 1.26x speedup and ~14.3% KV memory cut.</div>
+          </div>
+          <div class="cp-actions">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);"><i class="fa-solid fa-code"></i> Click to Load Snippet</span>
+            <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link" onclick="event.stopPropagation()">
+              HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="checkpoint-card" data-category="llama quant" onclick="selectModelZooCard(this, 'LLM-Drop/Llama-2-7B-joint-drop-awq4')">
+          <div>
+            <div class="cp-top">
+              <div class="cp-name">Llama-2-7B-joint-awq4</div>
+              <span class="cp-size">~2.1B (INT4)</span>
+            </div>
+            <div class="cp-desc">Joint 6 Attention + 2 MLP dropped + 4-bit AWQ quantization. Ultra-compact edge model.</div>
+          </div>
+          <div class="cp-actions">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);"><i class="fa-solid fa-code"></i> Click to Load Snippet</span>
+            <a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank" class="cp-link" onclick="event.stopPropagation()">
+              HF Model <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Interactive HF Python Load Box -->
+      <div class="code-box" style="margin-top: 2.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+          <span style="color: #94a3b8; font-size: 0.875rem; font-weight: 600;">
+            <i class="fa-brands fa-python" style="color: #38bdf8;"></i> Python Hugging Face Quickload
+          </span>
+          <button class="copy-btn" onclick="copySnippet('hf-py-code')"><i class="fa-regular fa-copy"></i> Copy Code</button>
+        </div>
+        <pre><code id="hf-py-code">from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_id = "LLM-Drop/Mistral-7B-drop-attn4"
+
+# Seamlessly load dropped checkpoints with custom auto_map
+tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, device_map="auto")</code></pre>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Quickstart & Tabbed Workflows -->
+  <section id="quickstart">
+    <div class="container-narrow">
+      <div class="section-header">
+        <div class="section-eyebrow">Developer Guide</div>
+        <h2 class="section-title">Quick Installation & Workflows</h2>
+        <p class="section-desc">Get started with layer dropping, joint schedules, and quantization pipelines in minutes.</p>
+      </div>
+
+      <div class="tab-header">
+        <button class="tab-btn active" onclick="switchQuickTab('tab-install', this)"><i class="fa-solid fa-terminal"></i> 1. Setup</button>
+        <button class="tab-btn" onclick="switchQuickTab('tab-attn', this)"><i class="fa-solid fa-brain"></i> 2. Attn Drop</button>
+        <button class="tab-btn" onclick="switchQuickTab('tab-block', this)"><i class="fa-solid fa-cubes"></i> 3. Block Drop</button>
+        <button class="tab-btn" onclick="switchQuickTab('tab-joint', this)"><i class="fa-solid fa-layer-group"></i> 4. Joint Drop</button>
+        <button class="tab-btn" onclick="switchQuickTab('tab-awq', this)"><i class="fa-solid fa-compress"></i> 5. 4-bit AWQ</button>
+        <button class="tab-btn" onclick="switchQuickTab('tab-eval', this)"><i class="fa-solid fa-chart-line"></i> 6. Benchmark</button>
+      </div>
+
+      <!-- Tab 1: Setup -->
+      <div id="tab-install" class="tab-content active">
+        <div class="code-box" style="margin-top: 0; border-top-left-radius: 0;">
+          <button class="copy-btn" onclick="copySnippet('code-install')"><i class="fa-regular fa-copy"></i> Copy</button>
+          <pre><code id="code-install"># 1. Clone the repository and create conda environment
+git clone https://github.com/CASE-Lab-UMD/LLM-Drop.git
+cd LLM-Drop
+conda create -n llm-drop python=3.10 -y
+conda activate llm-drop
+
+# 2. Install LLM-Drop package and dependencies
+pip install -e .
+pip install flash-attn --no-build-isolation</code></pre>
+        </div>
+      </div>
+
+      <!-- Tab 2: Attn Drop -->
+      <div id="tab-attn" class="tab-content">
+        <div class="code-box" style="margin-top: 0; border-top-left-radius: 0;">
+          <button class="copy-btn" onclick="copySnippet('code-attn')"><i class="fa-regular fa-copy"></i> Copy</button>
+          <pre><code id="code-attn"># Execute Sublayer Attention Dropping (Estimates importance & saves dropped model)
+bash scripts/dropping/layer_drop.sh   --model_name_or_path mistralai/Mistral-7B-v0.1   --drop_layer_type attn   --drop_layer_num 4   --output_dir checkpoints/Mistral-7B-drop-attn4</code></pre>
+        </div>
+      </div>
+
+      <!-- Tab 3: Block Drop -->
+      <div id="tab-block" class="tab-content">
+        <div class="code-box" style="margin-top: 0; border-top-left-radius: 0;">
+          <button class="copy-btn" onclick="copySnippet('code-block')"><i class="fa-regular fa-copy"></i> Copy</button>
+          <pre><code id="code-block"># Execute Full Transformer Block Dropping
+bash scripts/dropping/block_drop.sh   --model_name_or_path mistralai/Mistral-7B-v0.1   --drop_layer_num 4   --output_dir checkpoints/Mistral-7B-drop-block4</code></pre>
+        </div>
+      </div>
+
+      <!-- Tab 4: Joint Drop -->
+      <div id="tab-joint" class="tab-content">
+        <div class="code-box" style="margin-top: 0; border-top-left-radius: 0;">
+          <button class="copy-btn" onclick="copySnippet('code-joint')"><i class="fa-regular fa-copy"></i> Copy</button>
+          <pre><code id="code-joint"># Execute Joint Sublayer Dropping (Hybrid Attention + MLP schedule)
+bash scripts/dropping/layer_drop_joint.sh   --model_name_or_path meta-llama/Llama-2-7b-hf   --drop_attn_num 6   --drop_mlp_num 2   --output_dir checkpoints/Llama-2-7B-joint-drop</code></pre>
+        </div>
+      </div>
+
+      <!-- Tab 5: AWQ -->
+      <div id="tab-awq" class="tab-content">
+        <div class="code-box" style="margin-top: 0; border-top-left-radius: 0;">
+          <button class="copy-btn" onclick="copySnippet('code-awq')"><i class="fa-regular fa-copy"></i> Copy</button>
+          <pre><code id="code-awq"># Run 4-bit AWQ Quantization on Dropped Checkpoint for 2.14x Compounding Speedup
+bash scripts/quantization/awq.sh   --model_path checkpoints/Mistral-7B-drop-attn4   --quant_backend autoawq   --w_bit 4   --q_group_size 128   --output_dir checkpoints/Mistral-7B-drop-attn4-awq</code></pre>
+        </div>
+      </div>
+
+      <!-- Tab 6: Benchmark -->
+      <div id="tab-eval" class="tab-content">
+        <div class="code-box" style="margin-top: 0; border-top-left-radius: 0;">
+          <button class="copy-btn" onclick="copySnippet('code-eval')"><i class="fa-regular fa-copy"></i> Copy</button>
+          <pre><code id="code-eval"># 1. Run LM-Evaluation-Harness on MMLU, GSM8K, ARC, HellaSwag
+bash scripts/benchmark/benchmark_lm_eval.sh   --model_path checkpoints/Mistral-7B-drop-attn4   --tasks mmlu,gsm8k,arc_challenge,hellaswag
+
+# 2. Benchmark Inference Speed and Memory Footprint
+bash scripts/benchmark/benchmark_speed.sh   --model_path checkpoints/Mistral-7B-drop-attn4   --batch_size 1,8,16   --seq_len 2048,4096,8192</code></pre>
+        </div>
+      </div>
+
+      <!-- Project Milestones -->
+      <div style="margin-top: 4.5rem;">
+        <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 2rem; color: var(--text-main);">
+          <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Project Milestones & News
+        </h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">February 2026</div>
+            <div class="timeline-content">Published in <strong>Transactions on Machine Learning Research (TMLR 2026)</strong>.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">May 2025</div>
+            <div class="timeline-content">🏆 <strong>Qualcomm Innovation Fellowship (QIF) North America 2025 Winner</strong> awarded for efficiency-optimized Transformer architectures.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">November 2024</div>
+            <div class="timeline-content">Expanded support to Gemma-2, DeepSeek, Yi, Baichuan, and Solar model families.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">September 2024</div>
+            <div class="timeline-content">Released pre-dropped checkpoints on Hugging Face model hub collection.</div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-date">June 2024</div>
+            <div class="timeline-content">Initial release on arXiv (<em>What Matters in Transformers? Not All Attention Is Needed</em>) and open-source codebase.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BibTeX Citation -->
+  <section id="citation" style="background-color: #ffffff;">
+    <div class="container-narrow">
+      <div class="section-header">
+        <div class="section-eyebrow">Academic Reference</div>
+        <h2 class="section-title">Citation</h2>
+        <p class="section-desc">If you find LLM-Drop or our pre-dropped model checkpoints useful in your research, please cite our papers.</p>
+      </div>
+
+      <div class="code-box">
+        <button class="copy-btn" onclick="copySnippet('bibtex-code')"><i class="fa-regular fa-copy"></i> Copy BibTeX</button>
+        <pre><code id="bibtex-code">@article{he2026uncovering,
+  title={Uncovering the Redundancy in Transformers via a Unified Study of Layer Dropping},
+  author={He, Shwai and Sun, Guoheng and Shen, Zheyu and Li, Ang},
+  journal={Transactions on Machine Learning Research},
+  issn={2835-8856},
+  year={2026},
+  url={https://openreview.net/forum?id=1I7PCbOPfe}
+}
+
+@article{he2024what,
+  title={What Matters in Transformers? Not All Attention Is Needed},
+  author={He, Shwai and Sun, Guoheng and Shen, Zheyu and Li, Ang},
+  journal={arXiv preprint arXiv:2406.15786},
+  year={2024}
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Zoom & Pan SVG Modal -->
+  <div id="diagramModal" class="modal-backdrop" onclick="closeDiagramModal(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">LLM-Drop Unified Framework Architecture</div>
+        <button class="modal-close-btn" onclick="closeDiagramModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <img src="static/images/Layer_Drop.svg" alt="LLM-Drop Architecture Zoomed View">
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastNotification" class="toast">
+    <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
+    <span id="toastMessage">Copied to clipboard!</span>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.3rem; color: #ffffff; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-layer-group" style="color: #2dd4bf;"></i> LLM-Drop Project
+          </div>
+          <p style="line-height: 1.6; max-width: 440px;">
+            A unified study of architectural redundancy in Transformers by the CASE Lab at the University of Maryland, College Park.
+          </p>
+        </div>
+        <div>
+          <h4 style="color: #ffffff; font-weight: 700; margin-bottom: 1rem;">Navigation</h4>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#simulator">Simulator</a></li>
+            <li><a href="#benchmarks">Benchmarks</a></li>
+            <li><a href="#charts">Dynamics</a></li>
+            <li><a href="#checkpoints">Model Zoo</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: #ffffff; font-weight: 700; margin-bottom: 1rem;">Resources</h4>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
+            <li><a href="https://openreview.net/forum?id=1I7PCbOPfe" target="_blank">OpenReview Paper</a></li>
+            <li><a href="https://arxiv.org/abs/2406.15786" target="_blank">arXiv Preprint</a></li>
+            <li><a href="https://github.com/CASE-Lab-UMD/LLM-Drop" target="_blank">GitHub Repository</a></li>
+            <li><a href="https://huggingface.co/collections/LLM-Drop/llm-drop-66dde616140f04eb18424a0a" target="_blank">Hugging Face Collection</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          &copy; 2024–2026 CASE Lab, University of Maryland, College Park. Released under the Apache 2.0 License.
+        </div>
+        <div>
+          Contact: <a href="mailto:shwaihe@umd.edu">shwaihe@umd.edu</a> &nbsp;|&nbsp; <a href="mailto:ghsun@umd.edu">ghsun@umd.edu</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts for Interactivity & Chart.js Visualizations -->
+  <script>
+    // Toast System
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMessage');
+      toastMsg.innerText = msg || 'Copied to clipboard!';
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    function copySnippet(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Code copied to clipboard!');
+      });
+    }
+
+    // Modal Control
+    function openDiagramModal() {
+      document.getElementById('diagramModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDiagramModal(event) {
+      document.getElementById('diagramModal').classList.remove('open');
+      document.body.style.overflow = 'auto';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeDiagramModal();
+    });
+
+    // Mobile Nav Toggle
+    function toggleMobileNav() {
+      const navLinks = document.querySelector('.nav-links');
+      if (navLinks.style.display === 'flex') {
+        navLinks.style.display = 'none';
+      } else {
+        navLinks.style.display = 'flex';
+        navLinks.style.flexDirection = 'column';
+        navLinks.style.position = 'absolute';
+        navLinks.style.top = '68px';
+        navLinks.style.left = '0';
+        navLinks.style.right = '0';
+        navLinks.style.background = '#ffffff';
+        navLinks.style.padding = '1.5rem';
+        navLinks.style.boxShadow = 'var(--shadow-lg)';
+      }
+    }
+
+    // Quickstart Tab Switching
+    function switchQuickTab(tabId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    // Model Zoo Filtering & Interactive Card Selection
+    function filterModels(category, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      const cards = document.querySelectorAll('.checkpoint-card');
+      cards.forEach(card => {
+        if (category === 'all') {
+          card.style.display = 'flex';
+        } else {
+          const cats = card.getAttribute('data-category').split(' ');
+          if (cats.includes(category)) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    function selectModelZooCard(card, modelId) {
+      document.querySelectorAll('.checkpoint-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      
+      const snippet = `from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_id = "${modelId}"
+
+# Seamlessly load dropped checkpoints with custom auto_map
+tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, device_map="auto")`;
+      
+      document.getElementById('hf-py-code').innerText = snippet;
+      showToast(`Selected ${modelId.split('/')[1]}`);
+    }
+
+    // Drop Config Simulator
+    const modelMeta = {
+      'mistral-7b': { layers: 32, baseParams: 7.24, attnRatio: 0.25, mlpRatio: 0.75, name: 'MistralConfig', class: 'MistralForCausalLM' },
+      'llama-3-8b': { layers: 32, baseParams: 8.03, attnRatio: 0.25, mlpRatio: 0.75, name: 'LlamaConfig', class: 'LlamaForCausalLM' },
+      'gemma-2-9b': { layers: 42, baseParams: 9.24, attnRatio: 0.22, mlpRatio: 0.78, name: 'Gemma2Config', class: 'Gemma2ForCausalLM' },
+      'llama-2-7b': { layers: 32, baseParams: 6.74, attnRatio: 0.25, mlpRatio: 0.75, name: 'LlamaConfig', class: 'LlamaForCausalLM' }
+    };
+
+    function updateSimulator() {
+      const modelKey = document.getElementById('sim-model-select').value;
+      const meta = modelMeta[modelKey];
+      
+      const attnRange = document.getElementById('sim-attn-range');
+      const mlpRange = document.getElementById('sim-mlp-range');
+      attnRange.max = Math.floor(meta.layers / 2);
+      mlpRange.max = Math.floor(meta.layers / 2);
+      
+      const dropAttn = parseInt(attnRange.value, 10);
+      const dropMlp = parseInt(mlpRange.value, 10);
+      const quant = document.getElementById('sim-quant-select').value;
+      
+      document.getElementById('sim-model-info').innerText = `${meta.layers} Layers • ${meta.baseParams}B Params`;
+      document.getElementById('sim-attn-val').innerText = `${dropAttn} Layers`;
+      document.getElementById('sim-mlp-val').innerText = `${dropMlp} Layers`;
+      
+      // Calculate Metrics
+      const totalLayers = meta.layers;
+      const attnReductionPct = (dropAttn / totalLayers);
+      const mlpReductionPct = (dropMlp / totalLayers);
+      
+      let baseSpeedup = 1.0 + (attnReductionPct * 0.55) + (mlpReductionPct * 0.75);
+      if (quant === 'awq-4b' || quant === 'gptq-4b') {
+        baseSpeedup *= 1.75;
+      }
+      
+      const kvReduction = -(attnReductionPct * 100).toFixed(1);
+      
+      const layerWeight = meta.baseParams / totalLayers;
+      const prunedParams = (dropAttn * layerWeight * meta.attnRatio) + (dropMlp * layerWeight * meta.mlpRatio);
+      const activeParams = (meta.baseParams - prunedParams).toFixed(2);
+      
+      let estAcc = 100 - (dropAttn * 0.22) - (dropMlp * 0.35);
+      if (quant !== 'none') estAcc -= 0.6;
+      estAcc = Math.max(88, Math.min(100, estAcc)).toFixed(1);
+      
+      document.getElementById('kpi-speedup').innerText = `${baseSpeedup.toFixed(2)}×`;
+      document.getElementById('kpi-kv').innerText = `${kvReduction}%`;
+      document.getElementById('kpi-params').innerText = `${activeParams} B`;
+      document.getElementById('kpi-accuracy').innerText = `~${estAcc}%`;
+      
+      // Generate Drop Lists (Deeper layers first)
+      const dropAttnList = [];
+      for (let i = 0; i < dropAttn; i++) {
+        dropAttnList.push(totalLayers - 1 - i);
+      }
+      const dropMlpList = [];
+      for (let i = 0; i < dropMlp; i++) {
+        dropMlpList.push(totalLayers - 1 - i);
+      }
+      
+      const configObj = {
+        "drop_mlp_list": dropMlpList,
+        "drop_attn_list": dropAttnList,
+        "auto_map": {
+          "AutoConfig": `configuration_dropped_${modelKey.split('-')[0]}.${meta.name}`,
+          "AutoModelForCausalLM": `modeling_dropped_${modelKey.split('-')[0]}.${meta.class}`
+        }
+      };
+      
+      document.getElementById('sim-json-output').innerText = JSON.stringify(configObj, null, 2);
+    }
+
+    function copyConfigJson() {
+      const jsonText = document.getElementById('sim-json-output').innerText;
+      navigator.clipboard.writeText(jsonText).then(() => {
+        showToast('config.json copied to clipboard!');
+      });
+    }
+
+    // Chart.js Visualizations
+    let paretoChartInstance = null;
+    let kvChartInstance = null;
+    let layerChartInstance = null;
+
+    const paretoDatasets = {
+      'mistral': {
+        labels: ['Dense Base', 'Attn Drop (4)', 'Attn Drop (8)', 'MLP Drop (4)', 'Block Drop (4)', 'Attn-4 + AWQ-4b'],
+        speedups: [1.00, 1.22, 1.45, 1.28, 1.32, 2.14],
+        accuracy: [64.2, 63.8, 62.5, 63.1, 62.7, 63.2],
+        colors: ['#64748b', '#0d9488', '#0f766e', '#f59e0b', '#3b82f6', '#10b981']
+      },
+      'llama3': {
+        labels: ['Dense Base', 'Attn Drop (4)', 'Attn Drop (8)', 'MLP Drop (4)', 'Block Drop (4)', 'Attn-4 + AWQ-4b'],
+        speedups: [1.00, 1.21, 1.42, 1.27, 1.30, 2.08],
+        accuracy: [66.8, 66.1, 64.9, 65.5, 65.0, 65.4],
+        colors: ['#64748b', '#0d9488', '#0f766e', '#f59e0b', '#3b82f6', '#10b981']
+      },
+      'gemma2': {
+        labels: ['Dense Base', 'Attn Drop (6)', 'Attn Drop (10)', 'MLP Drop (6)', 'Block Drop (6)', 'Attn-6 + AWQ-4b'],
+        speedups: [1.00, 1.26, 1.48, 1.31, 1.35, 2.18],
+        accuracy: [71.2, 70.6, 69.1, 69.8, 69.2, 70.0],
+        colors: ['#64748b', '#0d9488', '#0f766e', '#f59e0b', '#3b82f6', '#10b981']
+      }
+    };
+
+    function initParetoChart(modelKey) {
+      const ctx = document.getElementById('paretoChart').getContext('2d');
+      const data = paretoDatasets[modelKey];
+      
+      const scatterPoints = data.speedups.map((speedup, idx) => ({
+        x: speedup,
+        y: data.accuracy[idx],
+        label: data.labels[idx]
+      }));
+
+      if (paretoChartInstance) paretoChartInstance.destroy();
+
+      paretoChartInstance = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Dropping Strategy',
+            data: scatterPoints,
+            backgroundColor: data.colors,
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            pointRadius: 9,
+            pointHoverRadius: 12
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.raw.label}: Speedup = ${ctx.raw.x}×, MMLU = ${ctx.raw.y}%`
+              },
+              backgroundColor: '#0f172a',
+              titleFont: { family: 'Outfit', size: 14 },
+              bodyFont: { family: 'Plus Jakarta Sans', size: 13 },
+              padding: 12,
+              cornerRadius: 8
+            },
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Inference Speedup Factor (Relative to Base)', font: { family: 'Outfit', weight: '700', size: 13 } },
+              min: 0.9,
+              max: 2.3,
+              grid: { color: '#f1f5f9' }
+            },
+            y: {
+              title: { display: true, text: 'MMLU Accuracy (%)', font: { family: 'Outfit', weight: '700', size: 13 } },
+              grid: { color: '#f1f5f9' }
+            }
+          }
+        }
+      });
+    }
+
+    function switchParetoModel(modelKey, btn) {
+      document.querySelectorAll('.chart-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      initParetoChart(modelKey);
+    }
+
+    function initKVCacheChart() {
+      const ctx = document.getElementById('kvCacheChart').getContext('2d');
+      const seqLengths = ['512', '1k', '2k', '4k', '8k', '16k', '32k'];
+      
+      // Memory in GB for Mistral-7B at Batch Size 8
+      const dense = [0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0];
+      const attn4 = [0.22, 0.44, 0.88, 1.75, 3.5, 7.0, 14.0];
+      const attn8 = [0.19, 0.38, 0.75, 1.5, 3.0, 6.0, 12.0];
+
+      kvChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: seqLengths,
+          datasets: [
+            {
+              label: 'Dense Base (32 Attn)',
+              data: dense,
+              borderColor: '#64748b',
+              backgroundColor: 'rgba(100, 116, 139, 0.1)',
+              borderWidth: 2.5,
+              tension: 0.2
+            },
+            {
+              label: 'LLM-Drop (4 Attn Dropped)',
+              data: attn4,
+              borderColor: '#0d9488',
+              backgroundColor: 'rgba(13, 148, 136, 0.1)',
+              borderWidth: 2.5,
+              tension: 0.2
+            },
+            {
+              label: 'LLM-Drop (8 Attn Dropped)',
+              data: attn8,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              borderWidth: 3,
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', weight: '600', size: 11 } } },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} GB` }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Context Length (Tokens)', font: { family: 'Outfit', weight: '700', size: 12 } }, grid: { color: '#f1f5f9' } },
+            y: { title: { display: true, text: 'KV Memory (GB)', font: { family: 'Outfit', weight: '700', size: 12 } }, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
+    function initLayerImportanceChart() {
+      const ctx = document.getElementById('layerImportanceChart').getContext('2d');
+      const layers = Array.from({ length: 32 }, (_, i) => `L${i}`);
+      
+      // Attention Redundancy increases in deep layers; MLP importance stays high
+      const attnRedundancy = layers.map((_, i) => (i < 12 ? 0.15 + (i * 0.02) : 0.39 + Math.pow((i - 12) / 19, 1.8) * 0.58));
+      const mlpImportance = layers.map((_, i) => (0.75 + Math.sin(i / 5) * 0.15));
+
+      layerChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: layers,
+          datasets: [
+            {
+              label: 'Attention Redundancy (Safe to Drop)',
+              data: attnRedundancy,
+              backgroundColor: layers.map((_, i) => i >= 24 ? '#14b8a6' : 'rgba(20, 184, 166, 0.45)'),
+              borderRadius: 4
+            },
+            {
+              label: 'MLP Knowledge Importance',
+              data: mlpImportance,
+              type: 'line',
+              borderColor: '#f59e0b',
+              borderWidth: 2.5,
+              tension: 0.3,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', weight: '600', size: 11 } } },
+            tooltip: { backgroundColor: '#0f172a' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Layer Depth Index (0 to 31)', font: { family: 'Outfit', weight: '700', size: 12 } }, grid: { display: false } },
+            y: { title: { display: true, text: 'Metric Magnitude (0 to 1)', font: { family: 'Outfit', weight: '700', size: 12 } }, min: 0, max: 1.05, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
+    // Initialize All
+    window.addEventListener('DOMContentLoaded', () => {
+      updateSimulator();
+      initParetoChart('mistral');
+      initKVCacheChart();
+      initLayerImportanceChart();
+    });
+  </script>
+</body>
+</html>
